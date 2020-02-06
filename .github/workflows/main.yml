@@ -142,3 +142,29 @@ jobs:
       with:
         name: none_on_ubuntu_latest_report
         path: report
+
+  windows_amd_64:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: build binaries
+      run : |
+        make minikube-windows-amd64.exe
+        make e2e-windows-amd64.exe
+    - name: install gopogh
+      run: |
+        GO111MODULE="on" go get github.com/medyagh/gopogh@v0.0.17 || true
+        cd -
+    - name: run integration test
+      run: |
+        mkdir -p /tmp/testhome
+        out/e2e-windows-amd64.exe --expected-default-driver=hyperv -minikube-start-args="--vm-driver=hyperv --hyperv-virtual-switch=primary-virtual-switch" -binary=out/minikube-windows-amd64.exe -test.v -test.timeout=65m
+    - name: generate gopogh report
+      run: |
+        set PATH = `go env GOPATH`/bin;%PATH%
+        go tool test2json -t < ./report/testout.txt > ./report/testout.json || true
+        gopogh -in ./report/testout.json -out ./report/testout.html -name "docker ubuntu" -repo github.com/kubernetes/minikube/  || true
+    - uses: actions/upload-artifact@v1
+      with:
+        name: none_on_ubuntu_latest_report
+        path: report
