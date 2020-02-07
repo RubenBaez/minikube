@@ -273,7 +273,7 @@ ifeq ($(MINIKUBE_BUILD_IN_DOCKER),y)
 	$(call DOCKER,$(BUILD_IMAGE),/usr/bin/make $@)
 endif
 	which go-bindata || GO111MODULE=off GOBIN="$(GOPATH)$(DIRSEP)bin" go get github.com/jteeuwen/go-bindata/...
-	#####
+#####
 ifeq ($(OS),Windows_NT)
 	go get github.com/jteeuwen/go-bindata/...
 	PATH="$(GOPATH)$(DIRSEP)bin" || true
