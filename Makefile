@@ -276,7 +276,7 @@ endif
 	#####
 ifeq ($(OS),Windows_NT)
 	PATH="$(GOPATH)$(DIRSEP)bin" || true
-	cd $(GOPATH)$(DIRSEP)bin\go-bindata && DIR
+	cd $(GOPATH)\bin\go-bindata && DIR
 	$(GOPATH)$(DIRSEP)bin\go-bindata -nomemcopy -o $@ -pkg assets deploy/addons/...
 endif
 #####
