@@ -149,7 +149,6 @@ jobs:
     - uses: actions/checkout@v2
     - name: build binaries
       run : |
-        go get github.com/jteeuwen/go-bindata
         make minikube-windows-amd64.exe
         make e2e-windows-amd64.exe
     - name: install gopogh
