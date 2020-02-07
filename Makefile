@@ -273,6 +273,14 @@ ifeq ($(MINIKUBE_BUILD_IN_DOCKER),y)
 	$(call DOCKER,$(BUILD_IMAGE),/usr/bin/make $@)
 endif
 	which go-bindata || GO111MODULE=off GOBIN="$(GOPATH)$(DIRSEP)bin" go get github.com/jteeuwen/go-bindata/...
+	#####
+	ifeq ($(OS),Windows_NT)
+		detected_OS := Windows
+		PATH = $(GOPATH)bin || true
+    	else
+        	detected_OS := $(shell uname)
+    	endif
+	#####
 	PATH="$(PATH)$(PATHSEP)$(GOPATH)$(DIRSEP)bin" go-bindata -nomemcopy -o $@ -pkg assets deploy/addons/...
 	-gofmt -s -w $@
 	@#golint: Dns should be DNS (compat sed)
