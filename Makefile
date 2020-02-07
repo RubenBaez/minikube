@@ -277,8 +277,6 @@ endif
 	ifeq ($(OS),Windows_NT)
 		detected_OS := Windows
 		PATH = $(GOPATH)bin || true
-    	else
-        	detected_OS := $(shell uname)
     	endif
 	#####
 	PATH="$(PATH)$(PATHSEP)$(GOPATH)$(DIRSEP)bin" go-bindata -nomemcopy -o $@ -pkg assets deploy/addons/...
