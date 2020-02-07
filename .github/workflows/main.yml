@@ -150,7 +150,7 @@ jobs:
     - name: build binaries
       run : |
         go get github.com/jteeuwen/go-bindata
-        set PATH = $HOME/go/bin
+        set PATH = $HOME\go\bin
         make minikube-windows-amd64.exe
         make e2e-windows-amd64.exe
     - name: install gopogh
