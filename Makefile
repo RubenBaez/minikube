@@ -272,7 +272,8 @@ pkg/minikube/assets/assets.go: $(shell find "deploy/addons" -type f)
 ifeq ($(MINIKUBE_BUILD_IN_DOCKER),y)
 	$(call DOCKER,$(BUILD_IMAGE),/usr/bin/make $@)
 endif
-	which go-bindata || GO111MODULE=off GOBIN="$(GOPATH)$(DIRSEP)bin" go get github.com/jteeuwen/go-bindata/...
+	which go-bindata || GO111MODULE=off GOBIN="$(GOPATH)$(DIRSEP)bin"
+	go get github.com/jteeuwen/go-bindata/...
 	PATH="$(GOPATH)bin"
 	PATH="$(PATH)$(PATHSEP)$(GOPATH)$(DIRSEP)bin" go-bindata -nomemcopy -o $@ -pkg assets deploy/addons/...
 	-gofmt -s -w $@
