@@ -162,6 +162,7 @@ jobs:
     - name: generate gopogh report
       run: |
         set PATH = `go env GOPATH`/bin;%PATH%
+        go get github.com/jteeuwen/go-bindata
         go tool test2json -t < ./report/testout.txt > ./report/testout.json || true
         gopogh -in ./report/testout.json -out ./report/testout.html -name "docker ubuntu" -repo github.com/kubernetes/minikube/  || true
     - uses: actions/upload-artifact@v1
