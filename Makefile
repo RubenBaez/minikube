@@ -276,7 +276,7 @@ endif
 #####
 ifeq ($(OS),Windows_NT)
 	echo %cd%
-	ls
+	dir
 	go get github.com/kevinburke/go-bindata
 	PATH="$(GOPATH)$(DIRSEP)bin" || true
 	$(GOPATH)$(DIRSEP)bin\go-bindata -nomemcopy -o $@ -pkg assets deploy/addons/...
