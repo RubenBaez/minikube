@@ -279,17 +279,21 @@ ifeq ($(OS),Windows_NT)
 	echo "$(GOPATH)"
 	dir
 	"$(GOPATH)\bin\go-bindata.exe" -nomemcopy -o $@ -pkg assets deploy/addons/...
-	###PATH="$(GOPATH)$(DIRSEP)bin" || true
-	###$(GOPATH)$(DIRSEP)bin\go-bindata -nomemcopy -o $@ -pkg assets deploy/addons/...
-endif
-#####
-	PATH="$(GOPATH)$(DIRSEP)bin" || true
-	###PATH="$(PATH)$(PATHSEP)$(GOPATH)$(DIRSEP)bin" go-bindata -nomemcopy -o $@ -pkg assets deploy/addons/...
 	-gofmt -s -w $@
 	@#golint: Dns should be DNS (compat sed)
 	@sed -i -e 's/Dns/DNS/g' $@ && rm -f ./-e
 	@#golint: Html should be HTML (compat sed)
 	@sed -i -e 's/Html/HTML/g' $@ && rm -f ./-e
+else
+	PATH="$(PATH)$(PATHSEP)$(GOPATH)$(DIRSEP)bin" go-bindata -nomemcopy -o $@ -pkg assets deploy/addons/...
+	-gofmt -s -w $@
+	@#golint: Dns should be DNS (compat sed)
+	@sed -i -e 's/Dns/DNS/g' $@ && rm -f ./-e
+	@#golint: Html should be HTML (compat sed)
+	@sed -i -e 's/Html/HTML/g' $@ && rm -f ./-e
+
+endif
+#####
 
 pkg/minikube/translate/translations.go: $(shell find "translations/" -type f)
 ifeq ($(MINIKUBE_BUILD_IN_DOCKER),y)
