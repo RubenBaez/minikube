@@ -278,7 +278,8 @@ ifeq ($(OS),Windows_NT)
 	echo "%cd%"
 	echo "$(GOPATH)"
 	dir
-	go get github.com/kevinburke/go-bindata
+	cd "$(GOPATH)\bin
+	dir
 	PATH="$(GOPATH)$(DIRSEP)bin" || true
 	$(GOPATH)$(DIRSEP)bin\go-bindata -nomemcopy -o $@ -pkg assets deploy/addons/...
 endif
