@@ -154,8 +154,10 @@ jobs:
         make e2e-windows-amd64.exe
     - name: install gopogh
       run: |
-        GO111MODULE="on" go get github.com/medyagh/gopogh@v0.0.17
+        go get github.com/medyagh/gopogh@v0.0.17
         cd -
+      env:
+        GO111MODULE: on
     - name: run integration test
       run: |
         mkdir -p /tmp/testhome
