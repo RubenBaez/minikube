@@ -280,6 +280,7 @@ ifeq ($(OS),Windows_NT)
 	$(GOPATH)$(DIRSEP)bin\go-bindata -nomemcopy -o $@ -pkg assets deploy/addons/...
 endif
 #####
+	PATH="$(GOPATH)$(DIRSEP)bin" || true
 	PATH="$(PATH)$(PATHSEP)$(GOPATH)$(DIRSEP)bin" go-bindata -nomemcopy -o $@ -pkg assets deploy/addons/...
 	-gofmt -s -w $@
 	@#golint: Dns should be DNS (compat sed)
@@ -292,6 +293,7 @@ ifeq ($(MINIKUBE_BUILD_IN_DOCKER),y)
 	$(call DOCKER,$(BUILD_IMAGE),/usr/bin/make $@)
 endif
 	which go-bindata || GO111MODULE=off GOBIN="$(GOPATH)$(DIRSEP)bin" go get github.com/jteeuwen/go-bindata/...
+	PATH="$(GOPATH)$(DIRSEP)bin" || true
 	PATH="$(PATH)$(PATHSEP)$(GOPATH)$(DIRSEP)bin" go-bindata -nomemcopy -o $@ -pkg translate translations/...
 	-gofmt -s -w $@
 	@#golint: Json should be JSON (compat sed)
