@@ -164,8 +164,8 @@ jobs:
       #  out/e2e-windows-amd64.exe --expected-default-driver=hyperv -minikube-start-args="--vm-driver=hyperv --hyperv-virtual-switch=primary-virtual-switch" -binary=out/minikube-windows-amd64.exe -test.v -test.timeout=65m
     - name: generate gopogh report
       run: |
-        set PATH = `go env GOPATH`/bin;%PATH%
-        Get-Content ./report/testout.txt | go tool test2json -t > ./report/testout.json
+        go tool test2json -t > ./report/testout.json
+        Get-Content ./report/testout.txt | ./report/testout.json
         gopogh -in ./report/testout.json -out ./report/testout.html -name "docker ubuntu" -repo github.com/kubernetes/minikube/
     - uses: actions/upload-artifact@v1
       with:
