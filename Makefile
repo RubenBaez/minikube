@@ -275,7 +275,7 @@ endif
 	which go-bindata || GO111MODULE=off GOBIN="$(GOPATH)$(DIRSEP)bin" go get github.com/jteeuwen/go-bindata/...
 #####
 ifeq ($(OS),Windows_NT)
-	$(shell ls)
+	ls
 	go get github.com/kevinburke/go-bindata
 	PATH="$(GOPATH)$(DIRSEP)bin" || true
 	$(GOPATH)$(DIRSEP)bin\go-bindata -nomemcopy -o $@ -pkg assets deploy/addons/...
