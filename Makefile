@@ -300,12 +300,20 @@ pkg/minikube/translate/translations.go: $(shell find "translations/" -type f)
 ifeq ($(MINIKUBE_BUILD_IN_DOCKER),y)
 	$(call DOCKER,$(BUILD_IMAGE),/usr/bin/make $@)
 endif
-	which go-bindata || GO111MODULE=off GOBIN="$(GOPATH)$(DIRSEP)bin" go get github.com/jteeuwen/go-bindata/...
-	PATH="$(GOPATH)$(DIRSEP)bin" || true
-	PATH="$(PATH)$(PATHSEP)$(GOPATH)$(DIRSEP)bin" go-bindata -nomemcopy -o $@ -pkg translate translations/...
-	-gofmt -s -w $@
-	@#golint: Json should be JSON (compat sed)
-	@sed -i -e 's/Json/JSON/' $@ && rm -f ./-e
+	ifeq ($(OS),Windows_NT)
+		which go-bindata || GO111MODULE=off GOBIN="$(GOPATH)$(DIRSEP)bin" go get github.com/jteeuwen/go-bindata/...
+		PATH="$(PATH)$(PATHSEP)$(GOPATH)$(DIRSEP)bin"
+		"$(GOPATH)\bin\go-bindata.exe" -nomemcopy -o $@ -pkg translate translations/...
+		-gofmt -s -w $@
+		@#golint: Json should be JSON (compat sed)
+		@sed -i -e 's/Json/JSON/' $@ && rm -f ./-e
+	else
+		which go-bindata || GO111MODULE=off GOBIN="$(GOPATH)$(DIRSEP)bin" go get github.com/jteeuwen/go-bindata/...
+		PATH="$(PATH)$(PATHSEP)$(GOPATH)$(DIRSEP)bin" go-bindata -nomemcopy -o $@ -pkg translate translations/...
+		-gofmt -s -w $@
+		@#golint: Json should be JSON (compat sed)
+		@sed -i -e 's/Json/JSON/' $@ && rm -f ./-e
+	endif
 
 .PHONY: cross
 cross: minikube-linux-amd64 minikube-linux-arm64 minikube-darwin-amd64 minikube-windows-amd64.exe ## Build minikube for all platform
