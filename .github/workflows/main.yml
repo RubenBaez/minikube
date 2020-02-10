@@ -150,18 +150,18 @@ jobs:
     - name: build binaries
       run : |
         echo "::add-path::$GOPATH\bin"
-        make minikube-windows-amd64.exe
-        make e2e-windows-amd64.exe
+      #  make minikube-windows-amd64.exe
+      #  make e2e-windows-amd64.exe
     - name: install gopogh
       run: |
-        go get github.com/medyagh/gopogh@v0.0.17
-        cd -
+      #  go get github.com/medyagh/gopogh@v0.0.17
+      #  cd -
       env:
         GO111MODULE: on
     - name: run integration test
       run: |
-        echo %Temp%
-        echo %temp%
+        echo "%Temp%"
+        echo "%temp%"
         MINIKUBE_HOME=/tmp/testhome out/e2e-windows-amd64.exe --expected-default-driver=hyperv -minikube-start-args="--vm-driver=hyperv --hyperv-virtual-switch=primary-virtual-switch" -binary=out/minikube-windows-amd64.exe -test.v -test.timeout=65m | tee ./report/testout.txt
     - name: generate gopogh report
       run: |
