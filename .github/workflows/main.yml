@@ -160,7 +160,6 @@ jobs:
         GO111MODULE: on
     - name: run integration test
       run: |
-        mkdir -p /tmp/testhome
         out/e2e-windows-amd64.exe --expected-default-driver=hyperv -minikube-start-args="--vm-driver=hyperv --hyperv-virtual-switch=primary-virtual-switch" -binary=out/minikube-windows-amd64.exe -test.v -test.timeout=65m | tee ./report/testout.txt
     - name: generate gopogh report
       run: |
