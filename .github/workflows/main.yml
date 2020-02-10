@@ -150,8 +150,8 @@ jobs:
     - name: build binaries
       run : |
         echo "::add-path::$GOPATH\bin"
-      #  make minikube-windows-amd64.exe
-      #  make e2e-windows-amd64.exe
+        make minikube-windows-amd64.exe
+        make e2e-windows-amd64.exe
     - name: install gopogh
       run: |
       #  go get github.com/medyagh/gopogh@v0.0.17
