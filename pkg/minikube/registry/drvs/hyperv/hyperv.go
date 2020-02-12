@@ -90,13 +90,14 @@ func status() registry.State {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	cmdEw := exec.CommandContext(ctx, path, "Enable-WindowsOptionalFeature",  "-Online", "-FeatureName", "Microsoft-Hyper-V -All")
-	outEw, err := cmd.CombinedOutput()
+	//New lines
+	cmd := exec.CommandContext(ctx, path, "Enable-WindowsOptionalFeature",  "-Online", "-FeatureName", "Microsoft-Hyper-V -All")
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Fatal("Error to enable windows feature")
 	}
-	cmd := exec.CommandContext(ctx, path, "Get-WindowsOptionalFeature", "-FeatureName", "Microsoft-Hyper-V-All", "-Online")
-	out, err := cmd.CombinedOutput()
+	cmd = exec.CommandContext(ctx, path, "Get-WindowsOptionalFeature", "-FeatureName", "Microsoft-Hyper-V-All", "-Online")
+	out, err = cmd.CombinedOutput()
 	if err != nil {
 		return registry.State{Installed: false, Error: fmt.Errorf("%s failed:\n%s", strings.Join(cmd.Args, " "), out), Fix: "Start PowerShell as Administrator, and run: 'Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All'", Doc: docURL}
 	}
