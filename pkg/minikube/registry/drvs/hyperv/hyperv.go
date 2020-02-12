@@ -97,7 +97,7 @@ func status() registry.State {
 		log.Fatal("Error to enable windows feature")
 	}
 	 */
-	
+
 	cmd = exec.CommandContext(ctx, path, "Get-WindowsOptionalFeature", "-FeatureName", "Microsoft-Hyper-V-All", "-Online")
 	out, err = cmd.CombinedOutput()
 	if err != nil {
