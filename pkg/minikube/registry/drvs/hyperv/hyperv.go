@@ -21,6 +21,7 @@ package hyperv
 import (
 	"context"
 	"fmt"
+	"log"
 	"os/exec"
 	"strings"
 	"time"
@@ -89,7 +90,11 @@ func status() registry.State {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	exec.CommandContext(ctx, path, "Enable-WindowsOptionalFeature",  "-Online", "-FeatureName", "Microsoft-Hyper-V -All")
+	cmdEw := exec.CommandContext(ctx, path, "Enable-WindowsOptionalFeature",  "-Online", "-FeatureName", "Microsoft-Hyper-V -All")
+	outEw, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Fatal("Error to enable windows feature")
+	}
 	cmd := exec.CommandContext(ctx, path, "Get-WindowsOptionalFeature", "-FeatureName", "Microsoft-Hyper-V-All", "-Online")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
