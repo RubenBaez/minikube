@@ -175,4 +175,3 @@ jobs:
       with:
         name: none_on_ubuntu_latest_report
         path: report
-
