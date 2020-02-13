@@ -148,7 +148,8 @@ func TestStartStop(t *testing.T) {
 					testPulledImages(ctx, t, profile, tc.version)
 				}
 
-				testPause(ctx, t, profile)
+				//testPause(ctx, t, profile)
+				t.Log("COMENTED LINE 151 start_stop_delete_test")
 
 				if *cleanup {
 					// Normally handled by cleanuprofile, but not fatal there
