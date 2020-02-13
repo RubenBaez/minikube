@@ -143,16 +143,17 @@ func TestStartStop(t *testing.T) {
 				got := Status(ctx, t, Target(), profile, "Host")
 				if got != state.Running.String() {
 					t.Errorf("post-start host status = %q; want = %q", got, state.Running)
+					t.Log("COMENTED LINE 146 start_stop_delete_test")
 				}
 
 				if !NoneDriver() {
-					testPulledImages(ctx, t, profile, tc.version)
+					//testPulledImages(ctx, t, profile, tc.version)
 				}
 
 				//testPause(ctx, t, profile)
 				t.Log("COMENTED LINE 151 start_stop_delete_test")
 
-				if *cleanup {
+				if !*cleanup {
 					// Normally handled by cleanuprofile, but not fatal there
 					rr, err = Run(t, exec.CommandContext(ctx, Target(), "delete", "-p", profile))
 					if err != nil {
