@@ -171,7 +171,8 @@ func Cleanup(t *testing.T, profile string, cancel context.CancelFunc) {
 func CleanupWithLogs(t *testing.T, profile string, cancel context.CancelFunc) {
 	t.Helper()
 	if !t.Failed() {
-		Cleanup(t, profile, cancel)
+		t.Log("CANCELED CLEANUP")
+		//Cleanup(t, profile, cancel)
 		return
 	}
 
@@ -181,7 +182,8 @@ func CleanupWithLogs(t *testing.T, profile string, cancel context.CancelFunc) {
 		t.Log("COMMENTED LINE")
 		//clusterLogs(t, profile)
 	}
-	Cleanup(t, profile, cancel)
+	//Cleanup(t, profile, cancel)
+	t.Log("COMENTED CLEANUP")
 }
 
 // clusterLogs shows logs for debugging a failed cluster
