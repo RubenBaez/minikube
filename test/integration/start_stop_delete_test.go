@@ -94,7 +94,7 @@ func TestStartStop(t *testing.T) {
 
 				rr, err := Run(t, exec.CommandContext(ctx, Target(), startArgs...))
 				if err != nil {
-					t.Log("%s failed: %v", rr.Args, err)
+					t.Logf("%s failed: %v", rr.Args, err)
 				}
 				t.Log("line 100 of start_stop_delete_test.go")
 
