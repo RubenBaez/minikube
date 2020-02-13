@@ -178,7 +178,8 @@ func CleanupWithLogs(t *testing.T, profile string, cancel context.CancelFunc) {
 	t.Logf("*** %s FAILED at %s", t.Name(), time.Now())
 
 	if *postMortemLogs {
-		clusterLogs(t, profile)
+		t.Log("COMMENTED LINE")
+		//clusterLogs(t, profile)
 	}
 	Cleanup(t, profile, cancel)
 }
