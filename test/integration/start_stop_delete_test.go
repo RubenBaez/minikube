@@ -99,7 +99,8 @@ func TestStartStop(t *testing.T) {
 				t.Log("line 100 of start_stop_delete_test.go")
 
 				if !strings.Contains(tc.name, "cni") {
-					testPodScheduling(ctx, t, profile)
+					//testPodScheduling(ctx, t, profile)
+					t.Log("COMENTED LINE 103 start_stop_delete_test.go")
 				}
 
 				rr, err = Run(t, exec.CommandContext(ctx, Target(), "stop", "-p", profile, "--alsologtostderr", "-v=3"))
