@@ -228,8 +228,8 @@ jobs:
         make e2e-windows-amd64.exe
     - name: install gopogh
       run: |
-      #  go get github.com/medyagh/gopogh@v0.0.17
-      #  cd -
+        go get github.com/medyagh/gopogh@v0.0.17
+        cd -
       env:
         GO111MODULE: on
     - name: run integration test
@@ -238,7 +238,6 @@ jobs:
         SET "MINIKUBE_HOME=\testhome" & powershell -Command "Start-Process cmd -Verb RunAs -ArgumentList 'out/e2e-windows-amd64.exe --expected-default-driver=hyperv -minikube-start-args="--vm-driver=hyperv --hyperv-virtual-switch=primary-virtual-switch" -binary=out/minikube-windows-amd64.exe -test.v -test.timeout=65m'"
     - name: generate gopogh report
       run: |
-        echo "{}" > ./report/testout.json
         go tool test2json -t > ./report/testout.json
         Get-Content ./report/testout.txt | ./report/testout.json
         gopogh -in ./report/testout.json -out ./report/testout.html -name "docker ubuntu" -repo github.com/kubernetes/minikube/
