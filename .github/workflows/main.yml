@@ -237,8 +237,8 @@ jobs:
     - name: run integration test
       run: |
         mkdir \testhome
-        Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-        choco install sudo
+        Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
+        scoop install gsudo
         SET "MINIKUBE_HOME=\testhome" & sudo out/e2e-windows-amd64.exe --expected-default-driver=hyperv -minikube-start-args="--vm-driver=hyperv --hyperv-virtual-switch=primary-virtual-switch" -binary=out/minikube-windows-amd64.exe -test.v -test.timeout=65m
     
     - name: generate gopogh report
