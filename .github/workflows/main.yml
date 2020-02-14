@@ -237,7 +237,7 @@ jobs:
     - name: run integration test
       run: |
         mkdir \testhome
-        SET "MINIKUBE_HOME=\testhome" & out/e2e-windows-amd64.exe -minikube-start-args=--vm-driver=hyperv -expected-default-driver= -test.timeout=70m -binary=out/minikube-windows-amd64.exe --hyperv-virtual-switch=primary-virtual-switch
+        SET "MINIKUBE_HOME=\testhome" & out/e2e-windows-amd64.exe --expected-default-driver=hyperv -minikube-start-args="--vm-driver=hyperv --hyperv-virtual-switch=primary-virtual-switch" -binary=out/minikube-windows-amd64.exe -test.v -test.timeout=65m
         runas /user:administrator out/e2e-windows-amd64.exe -minikube-start-args=--vm-driver=hyperv -expected-default-driver= -test.timeout=70m -binary=out/minikube-windows-amd64.exe --hyperv-virtual-switch=primary-virtual-switch
     
     - name: generate gopogh report
