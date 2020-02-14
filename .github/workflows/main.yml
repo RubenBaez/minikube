@@ -226,6 +226,8 @@ jobs:
         echo "::add-path::$GOPATH\bin"
         make minikube-windows-amd64.exe
         make e2e-windows-amd64.exe
+        dir
+        cd test & dir
     - name: install gopogh
       run: |
         go get github.com/medyagh/gopogh@v0.0.17
@@ -235,7 +237,9 @@ jobs:
     - name: run integration test
       run: |
         mkdir \testhome
-        SET "MINIKUBE_HOME=\testhome" & runas /user:testadminpowershell out/e2e-windows-amd64.exe --expected-default-driver=hyperv -minikube-start-args="--vm-driver=hyperv --hyperv-virtual-switch=primary-virtual-switch" -binary=out/minikube-windows-amd64.exe -test.v -test.timeout=65m
+        SET "MINIKUBE_HOME=\testhome"
+        powershell Start-Process -verb runAs out/e2e-windows-amd64.exe --expected-default-driver=hyperv -minikube-start-args="--vm-driver=hyperv --hyperv-virtual-switch=primary-virtual-switch" -binary=out/minikube-windows-amd64.exe -test.v -test.timeout=65m
+        runas /user:administrator out/e2e-windows-amd64.exe --expected-default-driver=hyperv -minikube-start-args="--vm-driver=hyperv --hyperv-virtual-switch=primary-virtual-switch" -binary=out/minikube-windows-amd64.exe -test.v -test.timeout=65m
     
     - name: generate gopogh report
       run: |
