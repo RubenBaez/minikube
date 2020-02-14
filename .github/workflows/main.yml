@@ -238,8 +238,8 @@ jobs:
       run: |
         mkdir \testhome
         SET "MINIKUBE_HOME=\testhome"
-        runas /user:administrator out/e2e-windows-amd64.exe --expected-default-driver=hyperv -minikube-start-args="--vm-driver=hyperv --hyperv-virtual-switch=primary-virtual-switch" -binary=out/minikube-windows-amd64.exe -test.v -test.timeout=65m
-    
+        powershell Start-Process -verb runAs out/e2e-windows-amd64.exe --expected-default-driver=hyperv -minikube-start-args="--vm-driver=hyperv --hyperv-virtual-switch=primary-virtual-switch" -binary=out/minikube-windows-amd64.exe -test.v -test.timeout=65m
+        
     - name: generate gopogh report
       run: |
         go tool test2json -t > ./report/testout.json
