@@ -239,7 +239,7 @@ jobs:
         mkdir \testhome
         Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
         scoop install gsudo
-        SET "MINIKUBE_HOME=\testhome" & sudo out/e2e-windows-amd64.exe --expected-default-driver=hyperv -minikube-start-args="--vm-driver=hyperv --hyperv-virtual-switch=primary-virtual-switch" -binary=out/minikube-windows-amd64.exe -test.v -test.timeout=65m
+        SET "MINIKUBE_HOME=\testhome" & sudo out/e2e-windows-amd64.exe --expected-default-driver=hyperv -minikube-start-args=--vm-driver=hyperv -binary=out/minikube-windows-amd64.exe -test.v -test.timeout=65m
     
     - name: generate gopogh report
       run: |
