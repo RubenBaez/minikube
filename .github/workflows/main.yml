@@ -238,6 +238,7 @@ jobs:
     - name: run integration test
       run: |
         mkdir -p testhome
+        mkdir -p report
         KUBECONFIG=$(pwd)/testhome/kubeconfig MINIKUBE_HOME=$(pwd)/testhome out/e2e-windows-amd64.exe --expected-default-driver=hyperv -minikube-start-args=--vm-driver=hyperv -binary=out/minikube-windows-amd64.exe -test.v -test.timeout=65m 2>&1 | tee ./report/testout.txt
       shell: bash
     - name: generate gopogh report
