@@ -243,7 +243,7 @@ jobs:
         cp -r test/integration/testdata ./
         ls -lah
         whoami
-        KUBECONFIG=$(pwd)/testhome/kubeconfig MINIKUBE_HOME=$(pwd)/testhome out/e2e-windows-amd64.exe --expected-default-driver=hyperv -minikube-start-args=--vm-driver=hyperv -test.v -test.timeout=65m -binary=out/minikube-windows-amd64.exe 2>&1 | tee ./report/testout.txt
+        KUBECONFIG=$(pwd)/testhome/kubeconfig MINIKUBE_HOME=$(pwd)/testhome sudo -E out/e2e-windows-amd64.exe --expected-default-driver=hyperv -minikube-start-args=--vm-driver=hyperv -test.v -test.timeout=65m -binary=out/minikube-windows-amd64.exe 2>&1 | tee ./report/testout.txt
       shell: bash
     - name: generate gopogh report
       run: |
