@@ -231,6 +231,7 @@ jobs:
       shell: bash
     - name: install gopogh
       run: |
+        cd /tmp
         GO111MODULE="on" go get github.com/medyagh/gopogh@v0.0.17 || true
         cd -
       shell: bash
