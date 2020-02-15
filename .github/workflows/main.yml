@@ -231,16 +231,13 @@ jobs:
       shell: bash
     - name: install gopogh
       run: |
-        go get github.com/medyagh/gopogh@v0.0.17 || true
+        cd /tmp
+        GO111MODULE="on" go get github.com/medyagh/gopogh@v0.0.17 || true
         cd -
-      env:
-        GO111MODULE: on
     - name: run integration test
       run: |
-        mkdir \testhome
-        Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
-        scoop install gsudo
-        SET "MINIKUBE_HOME=\testhome" & sudo out/e2e-windows-amd64.exe --expected-default-driver=hyperv -minikube-start-args=--vm-driver=hyperv -binary=out/minikube-windows-amd64.exe -test.v -test.timeout=65m
+        mkdir -p testhome
+        KUBECONFIG=$(pwd)/testhome/kubeconfig MINIKUBE_HOME=$(pwd)/testhome sudo out/e2e-windows-amd64.exe --expected-default-driver=hyperv -minikube-start-args=--vm-driver=hyperv -binary=out/minikube-windows-amd64.exe -test.v -test.timeout=65m
       shell: bash
     - name: generate gopogh report
       run: |
