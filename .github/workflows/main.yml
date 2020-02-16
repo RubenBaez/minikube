@@ -382,13 +382,12 @@ jobs:
     - uses: actions/checkout@v2
     - name: Install gopogh
       run: |
-        cd /tmp
         GO111MODULE="on" go get github.com/medyagh/gopogh@v0.0.17 || true
         cd -
         find ~/ -iname gopogh.exe
         echo $GOPATH
-        mkdir -p /tmp
-        curl -o /tmp https://github.com/medyagh/gopogh/releases/download/v0.1.16/gopogh.exe
+        mkdir -p ~/tmp
+        curl -o ~/tmp https://github.com/medyagh/gopogh/releases/download/v0.1.16/gopogh.exe
         ls
         find ~/ -iname gopogh.exe
         pwd
@@ -419,7 +418,7 @@ jobs:
         pwd
         echo $GITHUB_WORKSPACE
         go tool test2json -t < ./report/testout.txt > ./report/testout.json || true
-        STAT=$(/tmp/gopogh.exe -in ./report/testout.json -out ./report/testout.html -name " $GITHUB_REF" -repo "${JOB_NAME} ${GITHUB_REF} ${GITHUB_REPOSITORY}"  -details "${GITHUB_SHA}")  || true
+        STAT=$(~/tmp/gopogh.exe -in ./report/testout.json -out ./report/testout.html -name " $GITHUB_REF" -repo "${JOB_NAME} ${GITHUB_REF} ${GITHUB_REPOSITORY}"  -details "${GITHUB_SHA}")  || true
         echo status: ${STAT}
         FailNum=$(echo $STAT | jq '.NumberOfFail')
         TestsNum=$(echo $STAT | jq '.NumberOfTests')       
