@@ -385,7 +385,7 @@ jobs:
         find ~/ -iname gopogh.exe
         echo $GOPATH
         mkdir -p ~/tmp
-        curl -o ~/tmp https://github.com/medyagh/gopogh/releases/download/v0.1.16/gopogh.exe
+        curl -o ~/tmp https://github.com/medyagh/gopogh/releases/download/v0.1.16/gopogh.exe | sudo sh
         ls
         find ~/ -iname gopogh.exe
         pwd
