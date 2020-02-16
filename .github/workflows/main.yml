@@ -385,7 +385,8 @@ jobs:
         cd /tmp
         GO111MODULE="on" go get github.com/medyagh/gopogh@v0.0.17 || true
         cd -
-        ls /tmp
+        ls /tmp/bin
+        tmp/bin/gopogh
       shell: bash
     - name: Download binaries
       uses: actions/download-artifact@v1
