@@ -217,7 +217,11 @@ jobs:
         with:
           name: podman_ubuntu_18_04
           path: report
-  windows_amd_64:
+  docker_Windows_NT:
+    env:
+      TIME_ELAPSED: time
+      JOB_NAME: "Docker_Windows_NT"
+      COMMIT_STATUS: ""
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
@@ -226,8 +230,13 @@ jobs:
         echo "::add-path::$GOPATH\bin"
         make minikube-windows-amd64.exe
         make e2e-windows-amd64.exe
-        dir
-        cd test & dir
+        mkdir -p report
+        mkdir -p testhome
+        pwd
+        ls -lah
+        cp -r test/integration/testdata ./
+        ls -lah
+        whoami
       shell: bash
     - name: install gopogh
       run: |
@@ -237,12 +246,6 @@ jobs:
       shell: bash
     - name: run integration test
       run: |
-        mkdir -p testhome
-        mkdir -p report
-        ls -lah
-        cp -r test/integration/testdata ./
-        ls -lah
-        whoami
         set +euo pipefail
         START_TIME=$(date -u +%s)
         KUBECONFIG=$(pwd)/testhome/kubeconfig MINIKUBE_HOME=$(pwd)/testhome out/e2e-windows-amd64.exe --expected-default-driver=hyperv -minikube-start-args=--vm-driver=hyperv -binary=out/minikube-windows-amd64.exe -test.v -test.timeout=65m 2>&1 | tee ./report/testout.txt
@@ -262,9 +265,14 @@ jobs:
         COMMIT_STATUS="${JOB_NAME} : Completed with ${STAT} in ${TIME_ELAPSED}"
         echo ::set-env name=COMMIT_STATUS::${COMMIT_STATUS}
       shell: bash
+    - name: The End Result
+      run: |
+        echo time elapsed is ${TIME_ELAPSED}
+        echo END RESULT IS ${COMMIT_STATUS}
+      shell: bash
     - uses: actions/upload-artifact@v1
       with:
-        name: none_on_ubuntu_latest_report
+        name: docker_Windows_NT
         path: report
         
   upload_all_reports:
