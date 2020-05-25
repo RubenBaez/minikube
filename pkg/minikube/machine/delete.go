@@ -42,7 +42,7 @@ func deleteOrphanedKIC(ociBin string, name string) {
 
 	_, err := oci.ContainerStatus(ociBin, name)
 	if err != nil {
-		glog.Infof("couldn't inspect container %q before deleting, %s-daemon might needs a restart!: %v", name, ociBin, err)
+		glog.Infof("couldn't inspect container %q before deleting: %v", name, err)
 		return
 	}
 	// allow no more than 5 seconds for delting the container
@@ -60,9 +60,15 @@ func deleteOrphanedKIC(ociBin string, name string) {
 }
 
 // DeleteHost deletes the host VM.
-func DeleteHost(api libmachine.API, machineName string) error {
+// deleteAbandoned will try to delete the machine even if there is no minikube config for it.
+func DeleteHost(api libmachine.API, machineName string, deleteAbandoned ...bool) error {
+	delAbandoned := true
+	if len(deleteAbandoned) > 0 {
+		delAbandoned = deleteAbandoned[0]
+	}
+
 	host, err := api.Load(machineName)
-	if err != nil && host == nil {
+	if err != nil && host == nil && delAbandoned {
 		deleteOrphanedKIC(oci.Docker, machineName)
 		deleteOrphanedKIC(oci.Podman, machineName)
 		// Keep going even if minikube does not know about the host
@@ -93,7 +99,7 @@ func DeleteHost(api libmachine.API, machineName string) error {
 	return delete(api, host, machineName)
 }
 
-// delete removes a host and it's local data files
+// delete removes a host and its local data files
 func delete(api libmachine.API, h *host.Host, machineName string) error {
 	if err := h.Driver.Remove(); err != nil {
 		glog.Warningf("remove failed, will retry: %v", err)
