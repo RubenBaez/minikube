@@ -57,7 +57,13 @@ func TestKVMDriverInstallOrUpdate(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Expected to create tempdir. test: %s, got: %v", tc.name, err)
 		}
-		defer os.RemoveAll(dir)
+
+		defer func() { //clean up tempdir
+			err := os.RemoveAll(dir)
+			if err != nil {
+				t.Errorf("failed to clean up temp folder  %q", dir)
+			}
+		}()
 
 		pwd, err := os.Getwd()
 		if err != nil {
@@ -120,7 +126,12 @@ func TestHyperKitDriverInstallOrUpdate(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Expected to create tempdir. test: %s, got: %v", tc.name, err)
 		}
-		defer os.RemoveAll(dir)
+		defer func() { //clean up tempdir
+			err := os.RemoveAll(dir)
+			if err != nil {
+				t.Errorf("failed to clean up temp folder  %q", dir)
+			}
+		}()
 
 		pwd, err := os.Getwd()
 		if err != nil {

@@ -21,7 +21,9 @@ import (
 )
 
 func TestGetNotFound(t *testing.T) {
-	createTestConfig(t)
+	path := createTestConfig(t)
+	// remove all temp dir
+	defer removeTempDir(t, path)
 	_, err := Get("nonexistent")
 	if err == nil || err.Error() != "specified key could not be found in config" {
 		t.Fatalf("Get did not return error for unknown property")
@@ -29,7 +31,9 @@ func TestGetNotFound(t *testing.T) {
 }
 
 func TestGetOK(t *testing.T) {
-	createTestConfig(t)
+	path := createTestConfig(t)
+	// remove all temp dir
+	defer removeTempDir(t, path)
 	name := "driver"
 	err := Set(name, "virtualbox")
 	if err != nil {
