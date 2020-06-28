@@ -25,7 +25,9 @@ import (
 )
 
 func TestNotFound(t *testing.T) {
-	createTestConfig(t)
+	path := createTestConfig(t)
+	// remove all temp dir
+	defer removeTempDir(t, path)
 	err := Set("nonexistent", "10")
 	if err == nil || err.Error() != "find settings for \"nonexistent\" value of \"10\": property name \"nonexistent\" not found" {
 		t.Fatalf("Set did not return error for unknown property: %+v", err)
@@ -33,7 +35,9 @@ func TestNotFound(t *testing.T) {
 }
 
 func TestSetNotAllowed(t *testing.T) {
-	createTestConfig(t)
+	path := createTestConfig(t)
+	// remove all temp dir
+	defer removeTempDir(t, path)
 	err := Set("driver", "123456")
 	if err == nil || err.Error() != "run validations for \"driver\" with value of \"123456\": [driver \"123456\" is not supported]" {
 		t.Fatalf("Set did not return error for unallowed value: %+v", err)
@@ -41,7 +45,8 @@ func TestSetNotAllowed(t *testing.T) {
 }
 
 func TestSetOK(t *testing.T) {
-	createTestConfig(t)
+	path := createTestConfig(t)
+	defer removeTempDir(t, path)
 	err := Set("driver", "virtualbox")
 	defer func() {
 		err = Unset("driver")
@@ -61,7 +66,7 @@ func TestSetOK(t *testing.T) {
 	}
 }
 
-func createTestConfig(t *testing.T) {
+func createTestConfig(t *testing.T) string {
 	t.Helper()
 	td, err := ioutil.TempDir("", "config")
 	if err != nil {
@@ -85,4 +90,7 @@ func createTestConfig(t *testing.T) {
 	t.Cleanup(func() {
 		os.RemoveAll(td)
 	})
+	return td
+}
+
 }

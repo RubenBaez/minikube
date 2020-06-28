@@ -23,7 +23,9 @@ import (
 )
 
 func TestUnsetConfig(t *testing.T) {
-	createTestConfig(t)
+	path := createTestConfig(t)
+	// remove all temp dir
+	defer removeTempDir(t, path)
 	propName := "cpus"
 	propValue := "1"
 	err := Set(propName, propValue)
