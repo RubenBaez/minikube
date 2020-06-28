@@ -14,8 +14,8 @@
 
 # Bump these on release - and please check ISO_VERSION for correctness.
 VERSION_MAJOR ?= 1
-VERSION_MINOR ?= 10
-VERSION_BUILD ?= 1
+VERSION_MINOR ?= 12
+VERSION_BUILD ?= 0-beta.0
 RAW_VERSION=$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_BUILD)
 VERSION ?= v$(RAW_VERSION)
 
@@ -23,7 +23,7 @@ KUBERNETES_VERSION ?= $(shell egrep "DefaultKubernetesVersion =" pkg/minikube/co
 KIC_VERSION ?= $(shell egrep "Version =" pkg/drivers/kic/types.go | cut -d \" -f2)
 
 # Default to .0 for higher cache hit rates, as build increments typically don't require new ISO versions
-ISO_VERSION ?= v$(VERSION_MAJOR).$(VERSION_MINOR).0
+ISO_VERSION ?= v1.11.0
 # Dashes are valid in semver, but not Linux packaging. Use ~ to delimit alpha/beta
 DEB_VERSION ?= $(subst -,~,$(RAW_VERSION))
 RPM_VERSION ?= $(DEB_VERSION)
@@ -32,7 +32,7 @@ RPM_VERSION ?= $(DEB_VERSION)
 GO_VERSION ?= 1.13.8
 
 INSTALL_SIZE ?= $(shell du out/minikube-windows-amd64.exe | cut -f1)
-BUILDROOT_BRANCH ?= 2019.02.10
+BUILDROOT_BRANCH ?= 2020.02.2
 REGISTRY?=gcr.io/k8s-minikube
 
 # Get git commit id
@@ -52,7 +52,7 @@ MINIKUBE_BUCKET ?= minikube/releases
 MINIKUBE_UPLOAD_LOCATION := gs://${MINIKUBE_BUCKET}
 MINIKUBE_RELEASES_URL=https://github.com/kubernetes/minikube/releases/download
 
-KERNEL_VERSION ?= 4.19.107
+KERNEL_VERSION ?= 5.4.40
 # latest from https://github.com/golangci/golangci-lint/releases
 GOLINT_VERSION ?= v1.26.0
 # Limit number of default jobs, to avoid the CI builds running out of memory
@@ -205,6 +205,8 @@ minikube_iso: # old target kept for making tests happy
 		git clone --depth=1 --branch=$(BUILDROOT_BRANCH) https://github.com/buildroot/buildroot $(BUILD_DIR)/buildroot; \
 	fi;
 	$(MAKE) BR2_EXTERNAL=../../deploy/iso/minikube-iso minikube_defconfig -C $(BUILD_DIR)/buildroot
+	mkdir -p $(BUILD_DIR)/buildroot/output/build
+	echo "module buildroot.org/go" > $(BUILD_DIR)/buildroot/output/build/go.mod
 	$(MAKE) -C $(BUILD_DIR)/buildroot
 	mv $(BUILD_DIR)/buildroot/output/images/rootfs.iso9660 $(BUILD_DIR)/minikube.iso
 

@@ -155,15 +155,8 @@ func runStart(cmd *cobra.Command, args []string) {
 	ds, alts, specified := selectDriver(existing)
 	starter, err := provisionWithDriver(cmd, ds, existing)
 	if err != nil {
-		if errors.Is(err, oci.ErrWindowsContainers) {
-			out.ErrLn("")
-			out.ErrT(out.Conflict, "Your Docker Desktop container os type is Windows but Linux is required.")
-			out.T(out.Warning, "Please change Docker settings to use Linux containers instead of Windows containers.")
-			out.T(out.Documentation, "https://minikube.sigs.k8s.io/docs/drivers/docker/#verify-docker-container-type-is-linux")
-			exit.UsageT(`You can verify your Docker container type by running:
-	{{.command}}
-		`, out.V{"command": "docker info --format '{{.OSType}}'"})
-		}
+		maybeExitWithAdvice(err)
+		machine.MaybeDisplayAdvice(err, viper.GetString("driver"))
 		if specified {
 			// If the user specified a driver, don't fallback to anything else
 			exit.WithError("error provisioning host", err)
@@ -246,12 +239,6 @@ func provisionWithDriver(cmd *cobra.Command, ds registry.DriverState, existing *
 		cc.MinikubeISO = url
 	}
 
-	if viper.GetBool(nativeSSH) {
-		ssh.SetDefaultClient(ssh.Native)
-	} else {
-		ssh.SetDefaultClient(ssh.External)
-	}
-
 	var existingAddons map[string]bool
 	if viper.GetBool(installAddons) {
 		existingAddons = map[string]bool{}
@@ -263,6 +250,12 @@ func provisionWithDriver(cmd *cobra.Command, ds registry.DriverState, existing *
 	mRunner, preExists, mAPI, host, err := node.Provision(&cc, &n, true)
 	if err != nil {
 		return node.Starter{}, err
+	}
+
+	if viper.GetBool(nativeSSH) {
+		ssh.SetDefaultClient(ssh.Native)
+	} else {
+		ssh.SetDefaultClient(ssh.External)
 	}
 
 	return node.Starter{
@@ -286,27 +279,44 @@ func startWithDriver(starter node.Starter, existing *config.ClusterConfig) (*kub
 	}
 
 	numNodes := viper.GetInt(nodes)
-	if numNodes == 1 && existing != nil {
+	if existing != nil {
+		if numNodes > 1 {
+			// We ignore the --nodes parameter if we're restarting an existing cluster
+			out.WarningT(`The cluster {{.cluster}} already exists which means the --nodes parameter will be ignored. Use "minikube node add" to add nodes to an existing cluster.`, out.V{"cluster": existing.Name})
+		}
 		numNodes = len(existing.Nodes)
 	}
 	if numNodes > 1 {
 		if driver.BareMetal(starter.Cfg.Driver) {
 			exit.WithCodeT(exit.Config, "The none driver is not compatible with multi-node clusters.")
 		} else {
-			out.Ln("")
-			warnAboutMultiNode()
-			for i := 1; i < numNodes; i++ {
-				nodeName := node.Name(i + 1)
-				n := config.Node{
-					Name:              nodeName,
-					Worker:            true,
-					ControlPlane:      false,
-					KubernetesVersion: starter.Cfg.KubernetesConfig.KubernetesVersion,
+			// Only warn users on first start.
+			if existing == nil {
+				out.Ln("")
+				warnAboutMultiNode()
+
+				for i := 1; i < numNodes; i++ {
+					nodeName := node.Name(i + 1)
+					n := config.Node{
+						Name:              nodeName,
+						Worker:            true,
+						ControlPlane:      false,
+						KubernetesVersion: starter.Cfg.KubernetesConfig.KubernetesVersion,
+					}
+					out.Ln("") // extra newline for clarity on the command line
+					err := node.Add(starter.Cfg, n)
+					if err != nil {
+						return nil, errors.Wrap(err, "adding node")
+					}
 				}
-				out.Ln("") // extra newline for clarity on the command line
-				err := node.Add(starter.Cfg, n)
-				if err != nil {
-					return nil, errors.Wrap(err, "adding node")
+			} else {
+				for _, n := range existing.Nodes {
+					if !n.ControlPlane {
+						err := node.Add(starter.Cfg, n)
+						if err != nil {
+							return nil, errors.Wrap(err, "adding node")
+						}
+					}
 				}
 			}
 		}
@@ -359,6 +369,8 @@ func showKubectlInfo(kcs *kubeconfig.Settings, k8sVersion string, machineName st
 
 	path, err := exec.LookPath("kubectl")
 	if err != nil {
+		out.ErrT(out.Kubectl, "Kubectl not found in your path")
+		out.ErrT(out.Workaround, "You can use kubectl inside minikube. For more information, visit https://minikube.sigs.k8s.io/docs/handbook/kubectl/")
 		out.ErrT(out.Tip, "For best results, install kubectl: https://kubernetes.io/docs/tasks/tools/install-kubectl/")
 		return nil
 	}
@@ -596,8 +608,20 @@ func validateDriver(ds registry.DriverState, existing *config.ClusterConfig) {
 		exit.WithCodeT(exit.Unavailable, "The driver '{{.driver}}' is not supported on {{.os}}", out.V{"driver": name, "os": runtime.GOOS})
 	}
 
+	// if we are only downloading artifacts for a driver, we can stop validation here
+	if viper.GetBool("download-only") {
+		return
+	}
+
 	st := ds.State
 	glog.Infof("status for %s: %+v", name, st)
+
+	if st.NeedsImprovement { // warn but don't exit
+		out.ErrLn("")
+		out.WarningT("'{{.driver}}' driver reported a issue that could affect the performance.", out.V{"driver": name})
+		out.ErrT(out.Tip, "Suggestion: {{.fix}}", out.V{"fix": translate.T(st.Fix)})
+		out.ErrLn("")
+	}
 
 	if st.Error != nil {
 		out.ErrLn("")
@@ -686,7 +710,7 @@ func validateUser(drvName string) {
 	useForce := viper.GetBool(force)
 
 	if driver.NeedsRoot(drvName) && u.Uid != "0" && !useForce {
-		exit.WithCodeT(exit.Permissions, `The "{{.driver_name}}" driver requires root privileges. Please run minikube using 'sudo minikube start --driver={{.driver_name}}'.`, out.V{"driver_name": drvName})
+		exit.WithCodeT(exit.Permissions, `The "{{.driver_name}}" driver requires root privileges. Please run minikube using 'sudo -E minikube start --driver={{.driver_name}}'.`, out.V{"driver_name": drvName})
 	}
 
 	if driver.NeedsRoot(drvName) || u.Uid != "0" {
@@ -848,10 +872,10 @@ func validateFlags(cmd *cobra.Command, drvName string) {
 		}
 	}
 
-	// check that kubeadm extra args contain only whitelisted parameters
+	// check that kubeadm extra args contain only allowed parameters
 	for param := range config.ExtraOptions.AsMap().Get(bsutil.Kubeadm) {
-		if !config.ContainsParam(bsutil.KubeadmExtraArgsWhitelist[bsutil.KubeadmCmdParam], param) &&
-			!config.ContainsParam(bsutil.KubeadmExtraArgsWhitelist[bsutil.KubeadmConfigParam], param) {
+		if !config.ContainsParam(bsutil.KubeadmExtraArgsAllowed[bsutil.KubeadmCmdParam], param) &&
+			!config.ContainsParam(bsutil.KubeadmExtraArgsAllowed[bsutil.KubeadmConfigParam], param) {
 			exit.UsageT("Sorry, the kubeadm.{{.parameter_name}} parameter is currently not supported by --extra-config", out.V{"parameter_name": param})
 		}
 	}
@@ -976,7 +1000,7 @@ func getKubernetesVersion(old *config.ClusterConfig) string {
 		if viper.GetBool(force) {
 			out.WarningT("Kubernetes {{.version}} is not supported by this release of minikube", out.V{"version": nvs})
 		} else {
-			exit.WithCodeT(exit.Data, "Sorry, Kubernetes {{.version}} is not supported by this release of minikube", out.V{"version": nvs})
+			exit.WithCodeT(exit.Data, "Sorry, Kubernetes {{.version}} is not supported by this release of minikube. To use this version anyway, use the `--force` flag.", out.V{"version": nvs})
 		}
 	}
 
@@ -1019,4 +1043,36 @@ func getKubernetesVersion(old *config.ClusterConfig) string {
 		out.T(out.New, "Kubernetes {{.new}} is now available. If you would like to upgrade, specify: --kubernetes-version={{.prefix}}{{.new}}", out.V{"prefix": version.VersionPrefix, "new": defaultVersion})
 	}
 	return nv
+}
+
+// maybeExitWithAdvice before exiting will try to check for different error types and provide advice
+func maybeExitWithAdvice(err error) {
+	if errors.Is(err, oci.ErrWindowsContainers) {
+		out.ErrLn("")
+		out.ErrT(out.Conflict, "Your Docker Desktop container OS type is Windows but Linux is required.")
+		out.T(out.Warning, "Please change Docker settings to use Linux containers instead of Windows containers.")
+		out.T(out.Documentation, "https://minikube.sigs.k8s.io/docs/drivers/docker/#verify-docker-container-type-is-linux")
+		exit.UsageT(`You can verify your Docker container type by running:
+{{.command}}
+	`, out.V{"command": "docker info --format '{{.OSType}}'"})
+	}
+
+	if errors.Is(err, oci.ErrCPUCountLimit) {
+		out.ErrLn("")
+		out.ErrT(out.Conflict, "{{.name}} doesn't have enough CPUs. ", out.V{"name": viper.GetString("driver")})
+		if runtime.GOOS != "linux" && viper.GetString("driver") == "docker" {
+			out.T(out.Warning, "Please consider changing your Docker Desktop's resources.")
+			out.T(out.Documentation, "https://docs.docker.com/config/containers/resource_constraints/")
+		} else {
+			cpuCount := viper.GetInt(cpus)
+			if cpuCount == 2 {
+				out.T(out.Tip, "Please ensure your system has {{.cpu_counts}} CPU cores.", out.V{"cpu_counts": viper.GetInt(cpus)})
+			} else {
+				out.T(out.Tip, "Please ensure your {{.driver_name}} system has access to {{.cpu_counts}} CPU cores or reduce the number of the specified CPUs", out.V{"driver_name": viper.GetString("driver"), "cpu_counts": viper.GetInt(cpus)})
+			}
+		}
+
+		exit.UsageT("Ensure your {{.driver_name}} system has enough CPUs. The minimum allowed is 2 CPUs.", out.V{"driver_name": viper.GetString("driver")})
+	}
+
 }

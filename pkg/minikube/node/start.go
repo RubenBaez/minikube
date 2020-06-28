@@ -21,7 +21,6 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
@@ -37,9 +36,11 @@ import (
 	cmdcfg "k8s.io/minikube/cmd/minikube/cmd/config"
 	"k8s.io/minikube/pkg/addons"
 	"k8s.io/minikube/pkg/drivers/kic/oci"
+	"k8s.io/minikube/pkg/kapi"
 	"k8s.io/minikube/pkg/minikube/bootstrapper"
 	"k8s.io/minikube/pkg/minikube/bootstrapper/images"
 	"k8s.io/minikube/pkg/minikube/cluster"
+	"k8s.io/minikube/pkg/minikube/cni"
 	"k8s.io/minikube/pkg/minikube/command"
 	"k8s.io/minikube/pkg/minikube/config"
 	"k8s.io/minikube/pkg/minikube/constants"
@@ -128,6 +129,7 @@ func Start(starter Starter, apiServer bool) (*kubeconfig.Settings, error) {
 		if err = bs.SetupCerts(starter.Cfg.KubernetesConfig, *starter.Node); err != nil {
 			return nil, errors.Wrap(err, "setting up certs")
 		}
+
 	}
 
 	var wg sync.WaitGroup
@@ -146,6 +148,12 @@ func Start(starter Starter, apiServer bool) (*kubeconfig.Settings, error) {
 		go addons.Start(&wg, starter.Cfg, starter.ExistingAddons, config.AddonList)
 	}
 
+	wg.Add(1)
+	go func() {
+		rescaleCoreDNS(starter.Cfg, starter.Runner)
+		wg.Done()
+	}()
+
 	if apiServer {
 		// special ops for none , like change minikube directory.
 		// multinode super doesn't work on the none driver
@@ -153,16 +161,18 @@ func Start(starter Starter, apiServer bool) (*kubeconfig.Settings, error) {
 			prepareNone()
 		}
 
+		glog.Infof("Will wait %s for node ...", waitTimeout)
 		if err := bs.WaitForNode(*starter.Cfg, *starter.Node, viper.GetDuration(waitTimeout)); err != nil {
-			return nil, errors.Wrap(err, "Wait failed")
+			return nil, errors.Wrapf(err, "wait %s for node", viper.GetDuration(waitTimeout))
 		}
+
 	} else {
 		if err := bs.UpdateNode(*starter.Cfg, *starter.Node, cr); err != nil {
-			return nil, errors.Wrap(err, "Updating node")
+			return nil, errors.Wrap(err, "update node")
 		}
 
 		// Make sure to use the command runner for the control plane to generate the join token
-		cpBs, err := cluster.ControlPlaneBootstrapper(starter.MachineAPI, starter.Cfg, viper.GetString(cmdcfg.Bootstrapper))
+		cpBs, cpr, err := cluster.ControlPlaneBootstrapper(starter.MachineAPI, starter.Cfg, viper.GetString(cmdcfg.Bootstrapper))
 		if err != nil {
 			return nil, errors.Wrap(err, "getting control plane bootstrapper")
 		}
@@ -175,8 +185,18 @@ func Start(starter Starter, apiServer bool) (*kubeconfig.Settings, error) {
 		if err = bs.JoinCluster(*starter.Cfg, *starter.Node, joinCmd); err != nil {
 			return nil, errors.Wrap(err, "joining cluster")
 		}
+
+		cnm, err := cni.New(*starter.Cfg)
+		if err != nil {
+			return nil, errors.Wrap(err, "cni")
+		}
+
+		if err := cnm.Apply(cpr); err != nil {
+			return nil, errors.Wrap(err, "cni apply")
+		}
 	}
 
+	glog.Infof("waiting for startup goroutines ...")
 	wg.Wait()
 
 	// Write enabled addons to the config before completion
@@ -194,7 +214,7 @@ func Provision(cc *config.ClusterConfig, n *config.Node, apiServer bool) (comman
 	}
 
 	if driver.IsKIC(cc.Driver) {
-		beginDownloadKicArtifacts(&kicGroup, cc)
+		beginDownloadKicBaseImage(&kicGroup, cc, viper.GetBool("download-only"))
 	}
 
 	if !driver.BareMetal(cc.Driver) {
@@ -208,7 +228,7 @@ func Provision(cc *config.ClusterConfig, n *config.Node, apiServer bool) (comman
 	}
 
 	handleDownloadOnly(&cacheGroup, &kicGroup, n.KubernetesVersion)
-	waitDownloadKicArtifacts(&kicGroup)
+	waitDownloadKicBaseImage(&kicGroup)
 
 	return startMachine(cc, n)
 
@@ -251,7 +271,6 @@ func configureRuntimes(runner cruntime.CommandRunner, cc config.ClusterConfig, k
 
 	err = cr.Enable(disableOthers, forceSystemd())
 	if err != nil {
-		debug.PrintStack()
 		exit.WithError("Failed to enable container runtime", err)
 	}
 
@@ -360,8 +379,7 @@ func startHost(api libmachine.API, cc *config.ClusterConfig, n *config.Node) (*h
 		}
 	}
 
-	// don't try to re-create if container type is windows.
-	if errors.Is(err, oci.ErrWindowsContainers) {
+	if _, ff := err.(*oci.FailFastError); ff {
 		glog.Infof("will skip retrying to create machine because error is not retriable: %v", err)
 		return host, exists, err
 	}
@@ -506,5 +524,17 @@ func prepareNone() {
 
 	if err := util.MaybeChownDirRecursiveToMinikubeUser(localpath.MiniPath()); err != nil {
 		exit.WithCodeT(exit.Permissions, "Failed to change permissions for {{.minikube_dir_path}}: {{.error}}", out.V{"minikube_dir_path": localpath.MiniPath(), "error": err})
+	}
+}
+
+// rescaleCoreDNS attempts to reduce coredns replicas from 2 to 1 to improve CPU overhead
+// no worries if this doesn't work
+func rescaleCoreDNS(cc *config.ClusterConfig, runner command.Runner) {
+	kubectl := kapi.KubectlBinaryPath(cc.KubernetesConfig.KubernetesVersion)
+	cmd := exec.Command("sudo", "KUBECONFIG=/var/lib/minikube/kubeconfig", kubectl, "scale", "deployment", "--replicas=1", "coredns", "-n=kube-system")
+	if _, err := runner.RunCmd(cmd); err != nil {
+		glog.Warningf("unable to scale coredns replicas to 1: %v", err)
+	} else {
+		glog.Infof("successfully scaled coredns replicas to 1")
 	}
 }

@@ -79,8 +79,6 @@ type Manager interface {
 	KubeletOptions() map[string]string
 	// SocketPath returns the path to the socket file for a given runtime
 	SocketPath() string
-	// DefaultCNI returns whether to use CNI networking by default
-	DefaultCNI() bool
 
 	// Load an image idempotently into the runtime on a host
 	LoadImage(string) error
@@ -136,7 +134,11 @@ func New(c Config) (Manager, error) {
 
 	switch c.Type {
 	case "", "docker":
-		return &Docker{Socket: c.Socket, Runner: c.Runner, Init: sm}, nil
+		return &Docker{
+			Socket: c.Socket,
+			Runner: c.Runner,
+			Init:   sm,
+		}, nil
 	case "crio", "cri-o":
 		return &CRIO{
 			Socket:            c.Socket,
